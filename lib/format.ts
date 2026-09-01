@@ -1,0 +1,2 @@
+export function formatBytes(bytes:number) { if (!Number.isFinite(bytes)||bytes<=0) return "0 B"; const units=["B","KB","MB","GB","TB"]; const exponent=Math.min(Math.floor(Math.log(bytes)/Math.log(1024)),units.length-1); return `${(bytes/1024**exponent).toFixed(exponent>1?1:0)} ${units[exponent]}`; }
+export function formatDate(value:string) { return new Intl.DateTimeFormat("en-PH",{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(value)); }

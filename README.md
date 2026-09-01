@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PrintDrop
 
-## Getting Started
+PrintDrop is a Next.js 16 + Supabase print-submission desk. Customers upload without an account; an authenticated admin can review the queue, download originals, update statuses, arrange submitted images, and print contact sheets.
 
-First, run the development server:
+## Set up Supabase
+
+1. Create a Supabase project.
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in its SQL editor.
+3. Create an admin email/password user under **Authentication → Users**.
+4. Copy `.env.example` to `.env.local` and fill in every key.
+5. Set `ADMIN_EMAILS` to a comma-separated allowlist. If blank, any authenticated Supabase user is accepted.
+6. Set `NEXT_PUBLIC_STORAGE_QUOTA_BYTES` to the quota shown in the dashboard (default: 1 GB).
+7. Set `NEXT_PUBLIC_SITE_URL` to the deployed public URL so shared links use the correct Open Graph address.
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY` in the browser or commit `.env.local`.
+
+## Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` for uploads and `/login` for administration.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The storage metric is calculated from `submission_files`, so it reflects files uploaded through PrintDrop's dedicated private bucket. The quota is an environment setting because Supabase plan limits are not exposed by the standard client API.

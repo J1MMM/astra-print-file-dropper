@@ -1,0 +1,5 @@
+"use client";
+import {useState} from "react";
+import {LoaderCircle} from "lucide-react";
+import type {SubmissionStatus} from "@/lib/types";
+export function StatusControl({id,initial}:{id:string;initial:SubmissionStatus}){const [status,setStatus]=useState(initial),[saving,setSaving]=useState(false),[message,setMessage]=useState("");const save=async()=>{setSaving(true);setMessage("");const res=await fetch(`/api/admin/submissions/${id}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({status})});setSaving(false);setMessage(res.ok?"Saved":"Could not save")};return <div className="actions-stack"><select className="input" value={status} onChange={e=>setStatus(e.target.value as SubmissionStatus)}><option value="pending">Pending</option><option value="processing">Processing</option><option value="ready">Ready</option><option value="completed">Completed</option></select><button className="pill" onClick={save} disabled={saving}>{saving?<LoaderCircle className="spin" size={16}/>:"Update status"}</button>{message&&<small className="subtle">{message}</small>}</div>}
