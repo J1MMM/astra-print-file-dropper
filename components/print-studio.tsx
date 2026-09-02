@@ -12,9 +12,11 @@ import {
 import {
   ArrowLeft,
   ClipboardPaste,
+  FileDown,
   GripVertical,
   ImagePlus,
   Link2,
+  LoaderCircle,
   Printer,
   RotateCw,
   Trash2,
@@ -23,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { renderImageForPdf, safePdfName } from "@/lib/pdf-layout";
 
 type PaperKey =
   "a4" | "a3" | "a5" | "letter" | "legal" | "folio" | "photo4x6" | "photo5x7";
@@ -70,7 +73,7 @@ export function PrintStudio({
     ),
     [paperKey, setPaperKey] = useState<PaperKey>("a4"),
     [orientation, setOrientation] = useState<Orientation>("portrait"),
-    [slots, setSlots] = useState(4),
+    [slots, setSlots] = useState(1),
     [fit, setFit] = useState<Fit>("cover"),
     [color, setColor] = useState<Color>("color"),
     [gap, setGap] = useState(4),
@@ -82,7 +85,8 @@ export function PrintStudio({
     }),
     [linked, setLinked] = useState(true),
     [border, setBorder] = useState(false),
-    [dragging, setDragging] = useState(false);
+    [dragging, setDragging] = useState(false),
+    [exportingPdf, setExportingPdf] = useState(false);
   const input = useRef<HTMLInputElement>(null),
     dragIndex = useRef<number | null>(null),
     urls = useRef(new Set<string>());
@@ -155,6 +159,58 @@ export function PrintStudio({
     });
     dragIndex.current = null;
   };
+  const downloadPdf = async () => {
+    if (!images.length || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdfOrientation = w > h ? "landscape" : "portrait";
+      const pdf = new jsPDF({
+        orientation: pdfOrientation,
+        unit: "mm",
+        format: [w, h],
+        compress: true,
+      });
+      const slotW =
+        (w - margins.left - margins.right - gap * (layout.c - 1)) / layout.c;
+      const slotH =
+        (h - margins.top - margins.bottom - gap * (layout.r - 1)) / layout.r;
+      for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+        if (pageIndex > 0) pdf.addPage([w, h], pdfOrientation);
+        for (
+          let imageIndex = 0;
+          imageIndex < pages[pageIndex].length;
+          imageIndex++
+        ) {
+          const image = pages[pageIndex][imageIndex];
+          const row = Math.floor(imageIndex / layout.c);
+          const column = imageIndex % layout.c;
+          const x = margins.left + column * (slotW + gap);
+          const y = margins.top + row * (slotH + gap);
+          const rendered = await renderImageForPdf(image.url, slotW / slotH, {
+            fit,
+            color,
+            rotation: image.rotation,
+          });
+          pdf.addImage(rendered, "JPEG", x, y, slotW, slotH, undefined, "FAST");
+          if (border) {
+            pdf.setDrawColor(185);
+            pdf.setLineWidth(0.2);
+            pdf.rect(x, y, slotW, slotH);
+          }
+        }
+      }
+      pdf.save(safePdfName(title));
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "The PDF could not be created.",
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  };
   return (
     <div className="studio">
       <style>{`@page{size:${w}mm ${h}mm;margin:0}@media print{.print-sheet{width:${w}mm!important;height:${h}mm!important}}`}</style>
@@ -167,14 +223,34 @@ export function PrintStudio({
           <span>/</span>
           <strong>{title}</strong>
         </div>
-        <button
-          className="pill primary"
-          onClick={() => window.print()}
-          disabled={!images.length}
-        >
-          <Printer size={17} />
-          Print {pages.length > 1 ? `${pages.length} sheets` : "sheet"}
-        </button>
+        <div className="studio-head-actions">
+          <button
+            className="pill"
+            onClick={downloadPdf}
+            disabled={!images.length || exportingPdf}
+            aria-label="Download layout as PDF"
+            title="Download layout as PDF"
+          >
+            {exportingPdf ? (
+              <LoaderCircle className="spin" size={17} />
+            ) : (
+              <FileDown size={17} />
+            )}
+            <span>{exportingPdf ? "Creating PDF…" : "Download PDF"}</span>
+          </button>
+          <button
+            className="pill primary"
+            onClick={() => window.print()}
+            disabled={!images.length}
+            aria-label="Print layout"
+            title="Print layout"
+          >
+            <Printer size={17} />
+            <span>
+              Print {pages.length > 1 ? `${pages.length} sheets` : "sheet"}
+            </span>
+          </button>
+        </div>
       </header>
       <div className="studio-body">
         <aside className="studio-controls">

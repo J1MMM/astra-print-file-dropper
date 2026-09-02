@@ -5,6 +5,7 @@ import {
   Download,
   ExternalLink,
   File,
+  IdCard,
   LayoutGrid,
   UserRound,
 } from "lucide-react";
@@ -31,10 +32,16 @@ export default async function EntryPage({
           </Link>
           <h1 className="display">{entry.customer_name || "Guest customer"}</h1>
         </div>
-        <Link className="pill primary" href={`/admin/layout/${entry.id}`}>
-          <LayoutGrid size={17} />
-          Open in layout studio
-        </Link>
+        <div className="admin-head-actions">
+          <Link className="pill" href={`/admin/id-editor/${entry.id}`}>
+            <IdCard size={17} />
+            <span>ID photo editor</span>
+          </Link>
+          <Link className="pill primary" href={`/admin/layout/${entry.id}`}>
+            <LayoutGrid size={17} />
+            <span>Layout studio</span>
+          </Link>
+        </div>
       </header>
       <div className="detail-grid">
         <section className="panel" style={{ marginTop: 0 }}>
