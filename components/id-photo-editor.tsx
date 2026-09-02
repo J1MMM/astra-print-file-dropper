@@ -257,8 +257,8 @@ export function IdPhotoEditor({
     if (key !== "custom") {
       setPaperKey("5r");
       setLandscape(false);
-      setGap(0);
-      setMargin(0);
+      setGap(3);
+      setMargin(8);
     }
   };
 
