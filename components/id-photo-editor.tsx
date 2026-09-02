@@ -50,11 +50,11 @@ const packages: Record<
   },
   "package-b": {
     label: "Package B",
-    detail: "5 pcs 2×2 + 4 pcs 1×1 + 3 passport",
+    detail: "3 pcs 2×2 + 4 pcs 1×1 + 3 passport",
     groups: [
-      { sizeKey: "2x2", count: 5, columns: 2 },
+      { sizeKey: "2x2", count: 3, columns: 2 },
       { sizeKey: "passport", count: 3, columns: 3 },
-      { sizeKey: "1x1", count: 4, columns: 4 },
+      { sizeKey: "1x1", count: 4, columns: 2 },
     ],
   },
 };
@@ -111,6 +111,64 @@ function packPhotoGroups(
 
   finishPage();
   return pages;
+}
+
+function packPackageB(width: number, height: number, gap: number) {
+  const large = idSizes["2x2"];
+  const passport = idSizes.passport;
+  const small = idSizes["1x1"];
+  const topWidth = large.w * 2 + gap;
+  const passportWidth = passport.w * 3 + gap * 2;
+  const smallGridWidth = small.w * 2 + gap;
+  const bottomWidth = large.w + gap + smallGridWidth;
+  const bottomHeight = Math.max(large.h, small.h * 2 + gap);
+  const contentWidth = Math.max(topWidth, passportWidth, bottomWidth);
+  const contentHeight = large.h + passport.h + bottomHeight + gap * 2;
+
+  if (contentWidth > width + 0.01 || contentHeight > height + 0.01) {
+    return packPhotoGroups(packages["package-b"].groups, width, height, gap);
+  }
+
+  const placements: Placement[] = [];
+  let id = 0;
+  let y = Math.max(0, (height - contentHeight) / 2);
+  const addPhoto = (sizeKey: IdSizeKey, x: number, photoY: number) => {
+    const size = idSizes[sizeKey];
+    placements.push({
+      id: `${sizeKey}-${id++}`,
+      sizeKey,
+      w: size.w,
+      h: size.h,
+      x,
+      y: photoY,
+    });
+  };
+
+  let x = (width - topWidth) / 2;
+  addPhoto("2x2", x, y);
+  addPhoto("2x2", x + large.w + gap, y);
+
+  y += large.h + gap;
+  x = (width - passportWidth) / 2;
+  for (let column = 0; column < 3; column++) {
+    addPhoto("passport", x + column * (passport.w + gap), y);
+  }
+
+  y += passport.h + gap;
+  x = (width - bottomWidth) / 2;
+  addPhoto("2x2", x, y);
+  const smallX = x + large.w + gap;
+  for (let row = 0; row < 2; row++) {
+    for (let column = 0; column < 2; column++) {
+      addPhoto(
+        "1x1",
+        smallX + column * (small.w + gap),
+        y + row * (small.h + gap),
+      );
+    }
+  }
+
+  return [placements];
 }
 
 export function IdPhotoEditor({
@@ -180,13 +238,19 @@ export function IdPhotoEditor({
   }, [groups]);
   const packedPages = useMemo(
     () =>
-      packPhotoGroups(
-        groups,
-        Math.max(1, paperW - margin * 2),
-        Math.max(1, paperH - margin * 2),
-        gap,
-      ),
-    [groups, paperW, paperH, margin, gap],
+      packageKey === "package-b"
+        ? packPackageB(
+            Math.max(1, paperW - margin * 2),
+            Math.max(1, paperH - margin * 2),
+            gap,
+          )
+        : packPhotoGroups(
+            groups,
+            Math.max(1, paperW - margin * 2),
+            Math.max(1, paperH - margin * 2),
+            gap,
+          ),
+    [packageKey, groups, paperW, paperH, margin, gap],
   );
   const selectPackage = (key: PackageKey) => {
     setPackageKey(key);
